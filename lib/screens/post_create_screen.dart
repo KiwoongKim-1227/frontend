@@ -70,6 +70,8 @@ class _PostCreateScreenState extends State<PostCreateScreen> {
           Uri.parse('${ApiConfig.baseUrl}/api/files/upload'),
         );
 
+        request.headers['Authorization'] = 'Bearer $token';
+
         if (kIsWeb) {
           Uint8List bytes = await image.readAsBytes();
           request.files.add(http.MultipartFile.fromBytes(
@@ -87,7 +89,9 @@ class _PostCreateScreenState extends State<PostCreateScreen> {
         final response = await request.send();
         if (response.statusCode == 200) {
           final resString = await response.stream.bytesToString();
-          imageUrls.add(resString.replaceAll('"', ''));
+          final filename = resString.replaceAll('"', '').split('/').last;
+          final rawUrl = '${ApiConfig.baseUrl}/uploads/images/$filename';
+          imageUrls.add(rawUrl);
         } else {
           throw Exception('이미지 업로드 실패');
         }
@@ -95,7 +99,7 @@ class _PostCreateScreenState extends State<PostCreateScreen> {
 
       String contentWithImages = _contentController.text;
       for (String url in imageUrls) {
-        contentWithImages += '\n\n![image]($url)';
+        contentWithImages += '\n\n![image](${Uri.encodeFull(url.trim())})\n';
       }
 
       final postData = {
@@ -156,7 +160,6 @@ class _PostCreateScreenState extends State<PostCreateScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 드롭다운
               Row(
                 children: [
                   Expanded(
@@ -194,23 +197,17 @@ class _PostCreateScreenState extends State<PostCreateScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // 제목
               TextField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: '제목', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 16),
-
-              // 내용
               TextField(
                 controller: _contentController,
                 maxLines: 8,
                 decoration: const InputDecoration(labelText: '내용', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 16),
-
-              // 이미지 선택
               OutlinedButton.icon(
                 onPressed: _pickImages,
                 icon: const Icon(Icons.image),
@@ -225,7 +222,6 @@ class _PostCreateScreenState extends State<PostCreateScreen> {
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
                       final image = _selectedImages[index];
-
                       return ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: kIsWeb
@@ -246,8 +242,6 @@ class _PostCreateScreenState extends State<PostCreateScreen> {
                   ),
                 ),
               const SizedBox(height: 16),
-
-              // 작성 버튼
               ElevatedButton(
                 onPressed: _submitPost,
                 style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),

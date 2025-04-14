@@ -1,6 +1,7 @@
-// PostDetailScreen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import 'package:showtok/constants/api_config.dart';
 import 'package:showtok/utils/auth_util.dart';
@@ -220,108 +221,133 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       body: post == null
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 🟦 게시글 박스
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(post!['title'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Text('작성자: ${post!['authorNickname']}'),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.thumb_up_alt_outlined, size: 14),
-                            const SizedBox(width: 4),
-                            Text('$likeCount'),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.comment_outlined, size: 14),
-                            const SizedBox(width: 4),
-                            Text('${post!['commentCount']}'),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.remove_red_eye_outlined, size: 14),
-                            const SizedBox(width: 4),
-                            Text('${post!['viewCount']}'),
-                          ],
-                        ),
-                        const Divider(height: 20),
-                        const SizedBox(height: 18),
-                        Text(post!['content']),
-                        const SizedBox(height: 40),
-                        // 👍 좋아요 버튼
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.blueAccent),
-                          ),
-                          child: InkWell(
-                            onTap: _toggleLike,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.thumb_up_alt, color: Colors.blue),
-                                SizedBox(width: 6),
-                                Text('좋아요', style: TextStyle(color: Colors.blue)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  Text(post!['title'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('작성자: ${post!['authorNickname']}'),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.thumb_up_alt_outlined, size: 14),
+                      const SizedBox(width: 4),
+                      Text('$likeCount'),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.comment_outlined, size: 14),
+                      const SizedBox(width: 4),
+                      Text('${post!['commentCount']}'),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.remove_red_eye_outlined, size: 14),
+                      const SizedBox(width: 4),
+                      Text('${post!['viewCount']}'),
+                    ],
                   ),
-                  // ✍️ 댓글 입력 박스
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            onChanged: (val) => commentInput = val,
-                            decoration: const InputDecoration(
-                              hintText: '댓글을 입력하세요',
-                              border: InputBorder.none,
-                            ),
-                            style: const TextStyle(fontSize: 14),
-                            minLines: 1,
-                            maxLines: 3,
-                          ),
+                  const Divider(height: 20),
+                  const SizedBox(height: 18),
+
+                  // ✅ 마크다운 렌더링
+                  MarkdownBody(
+                    data: post!['content'],
+                    onTapLink: (text, href, title) {
+                      print("Tapped link: $href");
+                    },
+                    imageBuilder: (uri, title, alt) {
+                      final encodedUrl = Uri.encodeFull(uri.toString().trim());
+                      print("🔗 로딩 이미지: $encodedUrl");
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: CachedNetworkImage(
+                          imageUrl: encodedUrl,
+                          placeholder: (context, url) => const CircularProgressIndicator(),
+                          errorWidget: (context, url, error) =>
+                              Text('❌ 이미지 에러: $url\n$error'),
+                          fit: BoxFit.contain,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.send),
-                          onPressed: () {
-                            if (editingCommentId != null) {
-                              _editComment(editingCommentId!);
-                            } else {
-                              _submitComment();
-                            }
-                          },
-                        )
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                  const SizedBox(height: 12),
-                  // 💬 댓글 목록 박스
-                  _buildCommentBox(),
+
                   const SizedBox(height: 40),
+
+                  // 좋아요 버튼
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blueAccent),
+                    ),
+                    child: InkWell(
+                      onTap: _toggleLike,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.thumb_up_alt, color: Colors.blue),
+                          SizedBox(width: 6),
+                          Text('좋아요', style: TextStyle(color: Colors.blue)),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
+
+            // 댓글 입력 박스
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      onChanged: (val) => commentInput = val,
+                      decoration: const InputDecoration(
+                        hintText: '댓글을 입력하세요',
+                        border: InputBorder.none,
+                      ),
+                      style: const TextStyle(fontSize: 14),
+                      minLines: 1,
+                      maxLines: 3,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    onPressed: () {
+                      if (editingCommentId != null) {
+                        _editComment(editingCommentId!);
+                      } else {
+                        _submitComment();
+                      }
+                    },
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // 댓글 목록
+            _buildCommentBox(),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
     );
   }
 }

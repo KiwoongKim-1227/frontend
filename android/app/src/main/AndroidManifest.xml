@@ -6,8 +6,8 @@
 
     <application
         android:label="showtok"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name=".MainActivity"
@@ -19,7 +19,6 @@
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
 
-            <!-- ✅ Flutter 기본 설정 -->
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
@@ -30,35 +29,8 @@
             </intent-filter>
         </activity>
 
-        <!-- ✅ Flutter 필수 설정 -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
-        <!-- ✅ Google Play Services 버전 -->
-        <meta-data
-            android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version" />
-
-        <!-- ✅ Google 로그인용 client_id 설정 (웹용이라도 명시해두면 좋음) -->
-        <meta-data
-            android:name="com.google.android.gms.client_id"
-            android:value="253537541471-9nic76ab5iemn24fok7o9kqddpr67mc4.apps.googleusercontent.com" />
-
-        <!-- ✅ 구글 로그인용 인증 인텐트 필터 (웹뷰 인증 대응) -->
-        <activity
-            android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
-            android:excludeFromRecents="true"
-            android:exported="false" />
-
     </application>
-
-    <!-- (옵션) Android 11+에서 텍스트 공유를 위한 쿼리 -->
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT" />
-            <data android:mimeType="text/plain" />
-        </intent>
-    </queries>
-
-</manifest>
+</manifest> <!-- ✅ 여기가 반드시 필요함!! -->
